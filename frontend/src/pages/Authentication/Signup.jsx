@@ -8,6 +8,7 @@ import {
   VStack,
   useToast,
 } from "@chakra-ui/react";
+import axios from "axios";
 import React from "react";
 import { useState } from "react";
 
@@ -23,24 +24,33 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const postDetails = (pic) => {
-    console.log({ pic });
-    console.log(pic.type);
+  const postDetails = (pics) => {
     setLoading(true);
-    if (pic.type === "image/jpeg" || pic.type === "image/png ") {
-      const data = new FormData();
-      data.append("file", formData.pic);
-      data.append("upload_preset", "socket_app");
-      data.append("cloud_name", "dprjofqrn");
 
-      fetch("https://api.cloudinary.com/v1_1/dprjofqrn/image/upload", {
-        method: "POST",
+    if (pics.type === "image/jpeg" || pics.type === "image/png") {
+      const data = new FormData();
+      data.append("file", pics);
+      data.append("upload_preset", "chat-app");
+      data.append("cloud_name", "piyushproj");
+      fetch("https://api.cloudinary.com/v1_1/piyushproj/image/upload", {
+        method: "post",
         body: data,
       })
         .then((res) => res.json())
         .then((data) => {
           console.log({ data });
-          setFormData({ ...formData, pic: data.url.toString() });
+          setFormData((prevFormData) => {
+            return {
+              ...prevFormData,
+              pic: data.url.toString(),
+            };
+          });
+          console.log(data.url.toString());
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          setLoading(false);
         });
     } else {
       toast({
@@ -85,6 +95,23 @@ const Signup = () => {
       setLoading(false);
       return;
     }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Passwords do not match!",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { name, email, password, pic } = formData;
+      const { data } = axios.post("/api/user", { name, email, password, pic });
+    } catch (error) {}
   };
   return (
     <VStack spacing="5px" color="black">
@@ -144,7 +171,6 @@ const Signup = () => {
           accept="image/*"
           onChange={(e) => postDetails(e.target.files[0])}
           name="pic"
-          value={formData.pic}
         />
       </FormControl>
       <Button
